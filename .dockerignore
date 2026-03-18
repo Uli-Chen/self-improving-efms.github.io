@@ -1,0 +1,10 @@
+.venv
+.git
+__pycache__
+*.pkl
+*.mp4
+*.png
+.python-version
+README.md
+index.html
+assets/

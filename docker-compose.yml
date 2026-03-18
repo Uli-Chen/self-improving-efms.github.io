@@ -1,0 +1,12 @@
+services:
+  pointmass:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - JUPYTER_TOKEN=pointmass # Optional: Set a token for security
+    tty: true
+    stdin_open: true

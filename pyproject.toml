@@ -19,6 +19,7 @@ dependencies = [
     "tf-keras>=2.18.0",
     "dm-env>=1.6",
     "moviepy>=2.2.1",
+    "notebook",
 ]
 
 [[tool.uv.index]]
