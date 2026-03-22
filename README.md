@@ -10,11 +10,13 @@ These artifacts are produced by running the provided code and notebook, and serv
 ---
 
 
-### Modifications
+## Modifications
 
 We made a single modification to the original implementation: replacing the deprecated tostring_rgb function (removed in Matplotlib ≥ 3.8) with buffer_rgba for image extraction from the rendering canvas.
 
 ---
+
+## Running the Project
 
 ### Option 1: Docker (Recommended)
 
