@@ -9,6 +9,13 @@ This repository is part of a technical assessment project.
 These artifacts are produced by running the provided code and notebook, and serve as a reference for verifying correctness and reproducibility.
 ---
 
+
+### Modifications
+
+We made a single modification to the original implementation: replacing the deprecated tostring_rgb function (removed in Matplotlib ≥ 3.8) with buffer_rgba for image extraction from the rendering canvas.
+
+---
+
 ### Option 1: Docker (Recommended)
 
 This project provides a Docker configuration for a one-click environment setup that is isolated from your local machine's configuration. It strictly follows the versions specified in `uv.lock`.
