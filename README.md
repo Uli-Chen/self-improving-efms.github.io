@@ -1,4 +1,4 @@
-# TIMER PointMass PyTorch (Notebook-Aligned)
+# Self-Improving EFMs: PointMass (Pytorch)
 
 This repo now provides a notebook-aligned PyTorch pipeline with a unified CLI.
 
