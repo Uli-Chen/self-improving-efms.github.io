@@ -1,69 +1,86 @@
-# TIMER PointMass PyTorch Implementation
+# TIMER PointMass PyTorch (Notebook-Aligned)
 
-This repository contains the PyTorch migration of the TIMER (Self-Improving Episode-Focused Models) agent for a 2D PointMass environment, originally implemented in JAX and TensorFlow. The project is organized as a modular Python package supporting command-line execution and modern experiment tracking.
+This repo now provides a notebook-aligned PyTorch pipeline with a unified CLI.
 
-## Project Structure
+## Structure
 
-The codebase is organized into a modular structure for clarity and maintainability:
+- `pytorch/cli.py`: unified experiment CLI entrypoint.
+- `pytorch/generate_data.py`: waypoint-based dataset generation (aligned with notebook).
+- `pytorch/pipeline/stage1.py`: Stage 1 SFT training loop.
+- `pytorch/pipeline/stage2.py`: Stage 2 self-improvement REINFORCE loop.
+- `pytorch/pipeline/visualization.py`: policy rollout video utilities.
+- `pytorch/pipeline/figure_export.py`: notebook-style final figure exports.
+- `pytorch/common/`: shared normalization and rollout helpers.
 
-- `pytorch/config.py`: Centralized configuration management using argparse for hyperparameter tuning and experiment setup.
-- `pytorch/env.py`: The Point2D environment implementation using the dm_env interface, including custom rendering logic.
-- `pytorch/data.py`: PyTorch Dataset implementation and data normalization utilities.
-- `pytorch/models.py`: Neural network architectures for the TIMER agent, including the Action Head (Normal distribution) and Distance Head (Categorical distribution).
-- `pytorch/utils.py`: Support functions for policy evaluation, trajectory generation, and video visualization.
-- `pytorch/generate_data.py`: CLI script for generating expert demonstration data using a PD controller.
-- `pytorch/train_stage1.py`: CLI script for Stage 1 Supervised Fine-Tuning (Behavioral Cloning).
-- `pytorch/train_stage2.py`: CLI script for Stage 2 Reinforcement Learning Fine-Tuning (REINFORCE).
+## Run Experiments
 
-## Requirements and Installation
+1. Generate data
 
-This project uses `uv` for fast and reliable dependency management.
-
-1. Install `uv` if it is not already available on your system.
-2. Clone the repository and navigate to the project root.
-3. Synchronize the environment and install dependencies:
-   ```bash
-   uv sync
-   ```
-   This will create a `.venv` directory with all necessary packages including PyTorch, WandB, and MoviePy.
-
-## Experiment Execution
-
-The pipeline consists of three sequential stages.
-
-### 1. Data Generation
-
-Generate expert trajectories to be used for initial supervised training:
 ```bash
-uv run python -m pytorch.generate_data --num_trajs 1000 --save_path data/expert_data.pt
+uv run python -m pytorch.cli generate-data \
+  --save-path data/pointmass_dataset.pt \
+  --num-episodes 10000 \
+  --num-waypoints-per-episode 5 \
+  --episode-len-discard-thresh 10
 ```
 
-### 2. Stage 1: Supervised Fine-Tuning (SFT)
+2. Train Stage 1
 
-Train the model using Behavioral Cloning on the generated expert data:
 ```bash
-uv run python -m pytorch.train_stage1 --data_path data/expert_data.pt --epochs 100 --batch_size 256
-```
-Metrics and checkpoints will be saved to the `checkpoints/` directory.
-
-### 3. Stage 2: Reinforcement Learning (RL)
-
-Fine-tune the Stage 1 model using the REINFORCE algorithm:
-```bash
-uv run python -m pytorch.train_stage2 --checkpoint checkpoints/stage1_model.pt --iterations 100 --steps_per_iter 4000
+uv run python -m pytorch.cli train-stage1 \
+  --data-path data/pointmass_dataset_tuples.pt \
+  --num-steps 32768 \
+  --global-minibatch-size 256 \
+  --num-minibatches 128 \
+  --wandb-project timer-pointmass \
+  --wandb-run-name stage1-baseline
 ```
 
-## Features and Integrations
+3. Visualize Stage 1
 
-- **Configuration Management**: All hyperparameters for the environment, network, and training loops are exposed via CLI arguments in `config.py`.
-- **Experiment Tracking**: Weights & Biases (WandB) is integrated for real-time logging of losses, success rates, and evaluation videos. You can disable it using the `--disable_wandb` flag.
-- **Parallel Training**: The CLI design allows for launching multiple independent training runs. Parallel hyperparameter optimization can be easily achieved using WandB Sweeps.
-- **Visual Evaluation**: Training scripts automatically generate and log trajectory videos that visualize the agent's movement alongside its internal "steps-to-go" probability distributions.
+```bash
+uv run python -m pytorch.cli vis-stage1 \
+  --checkpoint checkpoints/stage1_model.pt \
+  --num-trajs 10 \
+  --out-dir outputs/vis_stage1
+```
 
-## Migration Details
+4. Train Stage 2
 
-The original JAX-based implementation was refactored into this PyTorch version with the following improvements:
-- Replaced JAX/Haiku neural networks with `torch.nn.Module`.
-- Converted TensorFlow Data pipelines to PyTorch `DataLoader` and `Dataset`.
-- Decoupled the environment logic from the training loops for better modularity.
-- Implemented a unified configuration system to support robust CLI experimentation.
+```bash
+uv run python -m pytorch.cli train-stage2 \
+  --checkpoint checkpoints/stage1_model.pt \
+  --num-reinforce-sgd-steps 2048 \
+  --reinforce-global-batch-size 2048 \
+  --reinforce-global-minibatch-size 64 \
+  --reinforce-num-minibatches 32 \
+  --gamma 0.9 \
+  --wandb-project timer-pointmass \
+  --wandb-run-name stage2-rl
+```
+
+5. Visualize Stage 2
+
+```bash
+uv run python -m pytorch.cli vis-stage2 \
+  --checkpoint checkpoints/stage2_model.pt \
+  --num-trajs 5 \
+  --out-dir outputs/vis_stage2
+```
+
+6. Export figures
+
+```bash
+uv run python -m pytorch.cli make-figures \
+  --stage1-ckpt checkpoints/stage1_model.pt \
+  --stage2-ckpt checkpoints/stage2_model.pt \
+  --trajs-path data/pointmass_dataset_trajs.pt \
+  --num-figure-episodes 10 \
+  --out-dir outputs/figures
+```
+
+## wandb notes
+
+- Stage1/Stage2 training now log metrics to `wandb` by default.
+- Use `--wandb-offline` for offline runs.
+- Use `--disable-wandb` to disable logging entirely.

@@ -49,8 +49,8 @@ class Point2D(dm_env.Environment):
             'goal_pos': self._goal_pos.copy()}
         ts = dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
-            reward=0.0, # changed from None for consistency with RL loops
-            discount=1.0,
+            reward=None,
+            discount=None,
             observation=obs)
 
         self._cur_episode_traj = [cur_pos_copy]
@@ -159,3 +159,4 @@ class Point2D(dm_env.Environment):
 
         plt.close(fig)
         return image
+

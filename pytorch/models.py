@@ -48,7 +48,7 @@ class MLP(nn.Module):
 
 class TIMERNetwork(nn.Module):
     def __init__(self, obs_dim: int, act_dim: int, num_dist_bins: int, 
-                 hidden_dims: list = [256, 256, 256], min_act_scale: float = 1e-4):
+                 hidden_dims: list = [256, 256, 256], min_act_scale: float = 1e-2):
         super().__init__()
         self.act_dim = act_dim
         self.num_dist_bins = num_dist_bins
@@ -121,3 +121,4 @@ class TIMERNetwork(nn.Module):
 
     def sample_dist_mode(self, logits):
         return torch.argmax(logits, dim=-1)
+
